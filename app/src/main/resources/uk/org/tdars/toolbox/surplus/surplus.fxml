@@ -14,7 +14,6 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.input.KeyCodeCombination?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -30,7 +29,7 @@
          <center>
             <TabPane fx:id="tabPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
               <tabs>
-                  <Tab text="%overview">
+                  <Tab fx:id="tabOverview" onSelectionChanged="#tabChanged" text="%overview">
                     <content>
                         <VBox>
                            <children>
@@ -50,6 +49,12 @@
                                     <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
                                  </padding>
                               </GridPane>
+                              <TableView fx:id="tableAuditLog" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="tblcolAuditLogMoment" prefWidth="250.0" text="%auditLog.moment" />
+                                  <TableColumn fx:id="tblcolAuditLog" prefWidth="510.0" text="%auditLog.entry" />
+                                </columns>
+                              </TableView>
                            </children>
                         </VBox>
                     </content>
@@ -117,7 +122,7 @@
                         </VBox>
                      </content>
                 </Tab>
-                  <Tab fx:id="tabReconciliation" disable="true" text="%reconciliation">
+                  <Tab fx:id="tabReconciliation" disable="true" onSelectionChanged="#tabChanged" text="%reconciliation">
                      <content>
                         <GridPane hgap="8.0" vgap="8.0">
                           <columnConstraints>
@@ -131,21 +136,20 @@
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                           </rowConstraints>
                            <children>
-                              <TextField promptText="%callsignNameHint" GridPane.columnIndex="1" />
+                              <TextField fx:id="txtReconciliationCallsign" onKeyTyped="#reconciliationCallsignChanged" promptText="%callsignNameHint" GridPane.columnIndex="1" />
                               <Label text="%callsign" />
-                              <TableView prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
+                              <TableView fx:id="tableReconciliation" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
                                 <columns>
-                                  <TableColumn minWidth="100.0" prefWidth="100.0" text="%lotNumber" />
-                                    <TableColumn minWidth="100.0" prefWidth="300.0" text="%itemDesc" />
-                                  <TableColumn minWidth="75.0" prefWidth="100.0" text="%boughtAt" />
-                                    <TableColumn minWidth="75.0" prefWidth="100.0" text="%soldAt" />
-                                    <TableColumn prefWidth="100.0" text="%lineTotal" />
+                                  <TableColumn fx:id="tblcolReconciliationLotNumber" minWidth="100.0" prefWidth="100.0" text="%lotNumber" />
+                                    <TableColumn fx:id="tblcolReconciliationItemDescription" minWidth="100.0" prefWidth="300.0" text="%itemDesc" />
+                                  <TableColumn fx:id="tblcolReconciliationBoughtAt" minWidth="75.0" prefWidth="100.0" text="%boughtAt" />
+                                    <TableColumn fx:id="tblcolReconciliationSoldFor" minWidth="75.0" prefWidth="100.0" text="%soldAt" />
+                                    <TableColumn fx:id="tblcolReconciliationLineTotal" prefWidth="100.0" text="%lineTotal" />
                                 </columns>
                               </TableView>
                               <HBox prefHeight="100.0" prefWidth="200.0" spacing="8.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
                                  <children>
-                                    <Button mnemonicParsing="false" text="%reconcile" />
-                                    <Button mnemonicParsing="false" text="%provideReceipt" />
+                                    <Button mnemonicParsing="false" onAction="#reconcile" text="%reconcile" />
                                  </children>
                               </HBox>
                               <Label fx:id="lblStatus" text="Person not found" GridPane.columnSpan="2147483647" GridPane.rowIndex="1">
@@ -164,19 +168,16 @@
                      <content>
                         <TableView fx:id="tableSalesOverview" prefHeight="200.0" prefWidth="200.0">
                           <columns>
-                            <TableColumn fx:id="tblcolSalesLotNumber" editable="false" prefWidth="100.0" text="%lotNumber" />
-                            <TableColumn fx:id="tblcolSalesItemDescription" editable="false" prefWidth="250.0" text="%itemDesc" />
-                              <TableColumn fx:id="tblcolSalesSeller" editable="false" prefWidth="150.0" text="%seller" />
-                              <TableColumn fx:id="tblcolSalesSoldFor" editable="false" prefWidth="100.0" text="%soldAt" />
-                              <TableColumn fx:id="tblcolSalesBuyer" editable="false" prefWidth="150.0" text="%buyer" />
+                            <TableColumn fx:id="tblcolSalesLotNumber" prefWidth="100.0" text="%lotNumber" />
+                            <TableColumn fx:id="tblcolSalesItemDescription" prefWidth="150.0" text="%itemDesc" />
+                              <TableColumn fx:id="tblcolSalesSeller" prefWidth="150.0" text="%seller" />
+                              <TableColumn fx:id="tblcolSalesSoldFor" prefWidth="100.0" text="%soldAt" />
+                              <TableColumn fx:id="tblcolSalesBuyer" prefWidth="150.0" text="%buyer" />
+                              <TableColumn fx:id="tblcolReconciledSeller" prefWidth="75.0" text="%reconciledSeller" />
+                              <TableColumn fx:id="tblcolReconciledBuyer" prefWidth="75.0" text="%reconciledBuyer" />
                           </columns>
                         </TableView>
                      </content>
-                  </Tab>
-                  <Tab fx:id="tabPaymentOverview" disable="true" text="%paymentOverview">
-                    <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                    </content>
                   </Tab>
               </tabs>
             </TabPane>

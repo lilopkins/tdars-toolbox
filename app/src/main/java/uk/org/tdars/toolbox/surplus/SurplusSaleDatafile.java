@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -20,7 +21,6 @@ import lombok.val;
 @Getter
 @Setter
 public class SurplusSaleDatafile implements Serializable {
-    private static final long serialVersionUID = 1L;
     private LocalDate auctionDate;
     @Setter(value = AccessLevel.NONE)
     private ArrayList<String> callsigns;
@@ -29,11 +29,14 @@ public class SurplusSaleDatafile implements Serializable {
      */
     @Setter(value = AccessLevel.NONE)
     private HashMap<String, SurplusSaleItem> items;
+    @Setter(value = AccessLevel.NONE)
+    private ArrayList<AuditEntry> auditLog;
 
     public SurplusSaleDatafile() {
         this.auctionDate = LocalDate.now();
         this.callsigns = new ArrayList<>();
         this.items = new HashMap<>();
+        this.auditLog = new ArrayList<>();
     }
 
     /**
@@ -55,7 +58,7 @@ public class SurplusSaleDatafile implements Serializable {
             val obj = ois.readObject();
             val auc = (SurplusSaleDatafile) obj;
             return auc;
-        } catch (ClassNotFoundException | ClassCastException e) {
+        } catch (ClassNotFoundException | ClassCastException | InvalidClassException e) {
             throw new NotAnAuctionException();
         }
     }

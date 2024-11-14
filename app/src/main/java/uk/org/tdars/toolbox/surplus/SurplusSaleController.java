@@ -3,11 +3,14 @@ package uk.org.tdars.toolbox.surplus;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 import java.util.ResourceBundle;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -40,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SurplusSaleController {
     private static Stage stage;
     private static final ResourceBundle messageBundle = ResourceBundle.getBundle("uk.org.tdars.toolbox.surplus.messages");
+    private static final BigDecimal CLUB_SALES_FACTOR = new BigDecimal("0.9");
 
     /**
      * Switch to the Surplus Sale mode.
@@ -62,17 +66,19 @@ public class SurplusSaleController {
 
     @FXML private Pane paneRoot;
     @FXML private BorderPane borderPane;
-    @FXML private Label lblStatus;
     @FXML private TabPane tabPane;
+    @FXML private Tab tabOverview;
     @FXML private Tab tabAuction;
     @FXML private Tab tabReconciliation;
     @FXML private Tab tabSalesOverview;
-    @FXML private Tab tabPaymentOverview;
     @FXML private MenuItem menuSaveItem;
     @FXML private Label lblSaved;
 
     // Overview tab
     @FXML private DatePicker auctionDatePicker;
+    @FXML private TableView<AuditEntry> tableAuditLog;
+    @FXML private TableColumn<AuditEntry, OffsetDateTime> tblcolAuditLogMoment;
+    @FXML private TableColumn<AuditEntry, String> tblcolAuditLog;
 
     // Under the Hammer tab
     @FXML private TextField txtAuctionLotNumber;
@@ -82,6 +88,16 @@ public class SurplusSaleController {
     @FXML private TextField txtAuctionBuyer;
     @FXML private TextField txtAuctionHammerPrice;
 
+    // Reconciliation
+    @FXML private TextField txtReconciliationCallsign;
+    @FXML private Label lblStatus;
+    @FXML private TableView<SurplusSaleItem> tableReconciliation;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolReconciliationLotNumber;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolReconciliationItemDescription;
+    @FXML private TableColumn<SurplusSaleItem, BigDecimal> tblcolReconciliationBoughtAt;
+    @FXML private TableColumn<SurplusSaleItem, BigDecimal> tblcolReconciliationSoldFor;
+    @FXML private TableColumn<SurplusSaleItem, BigDecimal> tblcolReconciliationLineTotal;
+
     // Saves overview
     @FXML private TableView<SurplusSaleItem> tableSalesOverview;
     @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesLotNumber;
@@ -89,6 +105,8 @@ public class SurplusSaleController {
     @FXML private TableColumn<SurplusSaleItem, BigDecimal> tblcolSalesSoldFor;
     @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesSeller;
     @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesBuyer;
+    @FXML private TableColumn<SurplusSaleItem, Boolean> tblcolReconciledSeller;
+    @FXML private TableColumn<SurplusSaleItem, Boolean> tblcolReconciledBuyer;
 
     /**
      * The file path for the currently opened file.
@@ -104,9 +122,6 @@ public class SurplusSaleController {
     private boolean needsSaving = false;
 
     public void initialize() {
-        stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
-            closeFile();
-        });
         stage.addEventHandler(WindowEvent.WINDOW_HIDING, event -> {
             closeFile();
         });
@@ -116,6 +131,12 @@ public class SurplusSaleController {
 
         txtAuctionSeller.focusedProperty().addListener(observable -> {
             auctionSellerChanged();
+        });
+        txtAuctionBuyer.focusedProperty().addListener(observable -> {
+            auctionBuyerChanged();
+        });
+        txtReconciliationCallsign.focusedProperty().addListener(observable -> {
+            reconciliationCallsignChanged();
         });
     }
 
@@ -128,7 +149,6 @@ public class SurplusSaleController {
         tabAuction.setDisable(!fileOpened);
         tabReconciliation.setDisable(!fileOpened);
         tabSalesOverview.setDisable(!fileOpened);
-        tabPaymentOverview.setDisable(!fileOpened);
         auctionDatePicker.setDisable(!fileOpened);
         menuSaveItem.setDisable(!fileOpened);
     }
@@ -225,7 +245,9 @@ public class SurplusSaleController {
      * Trigger basic data to load from the file into the UI.
      */
     private void loadInitialFileData() {
+        log.trace("loadInitialFileData");
         auctionDatePicker.setValue(this.datafile.getAuctionDate());
+        tabChanged(); // trigger reload of tab if needed
     }
 
     /**
@@ -259,7 +281,7 @@ public class SurplusSaleController {
             );
             t.play();
         } catch (IOException e) {
-            log.warn("Failed to save: %s", e.getLocalizedMessage());
+            log.warn("Failed to save: {}", e.getLocalizedMessage());
             showErrorAlert("dialog.failed-save.title", "dialog.failed-save.header", "dialog.failed-save.content");
         }
     }
@@ -328,6 +350,7 @@ public class SurplusSaleController {
      * seller is typed in.
      */
     public void auctionSellerChanged() {
+        log.trace("auctionSellerChanged");
         val currentlyTypedOrig = txtAuctionSeller.textProperty().get();
         if (currentlyTypedOrig.isBlank()) return;
 
@@ -345,7 +368,7 @@ public class SurplusSaleController {
             .getItems()
             .keySet()
             .stream()
-            .filter(lotNum -> lotNum.startsWith("%s ".formatted(callsign)))
+            .filter(lotNum -> lotNum.startsWith("%s-".formatted(callsign)))
             .count() + 1;
         txtAuctionLotNumber.textProperty().set("%s-%d".formatted(callsign, nextNum));
 
@@ -363,6 +386,7 @@ public class SurplusSaleController {
      * Make suggestions for autocompletion.
      */
     public void auctionBuyerChanged() {
+        log.trace("auctionBuyerChanged");
         val currentlyTypedOrig = txtAuctionBuyer.textProperty().get();
         if (currentlyTypedOrig.isBlank()) return;
 
@@ -388,6 +412,7 @@ public class SurplusSaleController {
      * Save the item as not sold and clear fields
      */
     public void auctionItemNotSold() {
+        log.trace("auctionItemNotSold");
         val item = new SurplusSaleItem();
         item.setLotNumber(txtAuctionLotNumber.textProperty().get());
         item.setSellerCallsign(txtAuctionSeller.textProperty().get());
@@ -398,11 +423,14 @@ public class SurplusSaleController {
         } catch (NumberFormatException e) {
             log.warn("invalid reserve price");
         }
+        item.setReconciledSeller(true);
+        item.setReconciledBuyer(true);
         // Save item and callsigns
         this.datafile.getItems().put(item.getLotNumber(), item);
         if (!this.datafile.getCallsigns().contains(item.getSellerCallsign())) {
             this.datafile.getCallsigns().add(item.getSellerCallsign());
         }
+        this.datafile.getAuditLog().add(new AuditEntry("Lot %s (%s, %s) did not sell.".formatted(item.getLotNumber(), item.getItemDescription(), item.getSellerCallsign())));
         this.needsSaving = true;
 
         // Clear fields
@@ -416,6 +444,7 @@ public class SurplusSaleController {
      * Save the item as sold and clear fields
      */
     public void auctionItemSold() {
+        log.trace("auctionItemSold");
         val item = new SurplusSaleItem();
         item.setLotNumber(txtAuctionLotNumber.textProperty().get());
         item.setSellerCallsign(txtAuctionSeller.textProperty().get());
@@ -439,6 +468,7 @@ public class SurplusSaleController {
 
         // Save item and callsigns
         this.datafile.getItems().put(item.getLotNumber(), item);
+        this.datafile.getAuditLog().add(new AuditEntry("Lot %s (%s, %s) sold to %s for %s.".formatted(item.getLotNumber(), item.getItemDescription(), item.getSellerCallsign(), item.getBuyerCallsign(), item.getHammerPrice())));
         if (!this.datafile.getCallsigns().contains(item.getSellerCallsign())) {
             this.datafile.getCallsigns().add(item.getSellerCallsign());
         }
@@ -460,16 +490,149 @@ public class SurplusSaleController {
      * Establish if any UI updates are needed as a result of a tab change
      */
     public void tabChanged() {
+        log.trace("tabChanged");
         val selectedTab = tabPane.selectionModelProperty().get().getSelectedItem();
         if (selectedTab.equals(tabSalesOverview)) {
             // Update sales table
+            log.debug("Updating sales table");
             tblcolSalesLotNumber.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("lotNumber"));
             tblcolSalesItemDescription.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("itemDescription"));
             tblcolSalesSoldFor.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, BigDecimal>("hammerPrice"));
             tblcolSalesSeller.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("sellerCallsign"));
             tblcolSalesBuyer.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("buyerCallsign"));
+            tblcolReconciledSeller.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, Boolean>("reconciledSeller"));
+            tblcolReconciledBuyer.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, Boolean>("reconciledBuyer"));
 
             tableSalesOverview.setItems(FXCollections.observableList(this.datafile.getItems().values().stream().toList()));
+            tableSalesOverview.refresh();
+        } else if (selectedTab.equals(tabReconciliation)) {
+            // Reset callsign and table
+            log.debug("Clearing reconciliation callsign");
+            txtReconciliationCallsign.textProperty().set("");
+            reconciliationCallsignChanged();
+        } else if (selectedTab.equals(tabOverview)) {
+            log.debug("Updating audit log");
+            tblcolAuditLogMoment.setCellValueFactory(new PropertyValueFactory<AuditEntry, OffsetDateTime>("moment"));
+            tblcolAuditLog.setCellValueFactory(new PropertyValueFactory<AuditEntry, String>("entry"));
+            if (this.datafile == null) {
+                tableAuditLog.setItems(null);
+            } else {
+                tableAuditLog.setItems(FXCollections.observableList(this.datafile.getAuditLog().stream().toList()));
+                tableAuditLog.refresh();
+            }
         }
+    }
+
+    /**
+     * Make suggestions for autocompletion and calculate figure for individual.
+     */
+    public void reconciliationCallsignChanged() {
+        log.trace("reconciliationCallsignChanged");
+        val currentlyTypedOrig = txtReconciliationCallsign.textProperty().get();
+        if (currentlyTypedOrig.isBlank()) {
+            lblStatus.textProperty().set(messageBundle.getString("outcome-nothing"));
+            tableReconciliation.setItems(null);
+            return;
+        }
+
+        // Update text to uppercase callsign
+        val split = currentlyTypedOrig.split(" ", -1);
+        split[0] = split[0].toUpperCase();
+        val currentlyTyped = String.join(" ", split);
+        val caretPos = txtReconciliationCallsign.caretPositionProperty().get();
+        txtReconciliationCallsign.textProperty().set(currentlyTyped);
+        txtReconciliationCallsign.positionCaret(caretPos);
+
+        // find a suggestion
+        val maybeSuggestion = this.datafile.getCallsigns().stream().filter(cs -> cs.startsWith(currentlyTyped)).findFirst();
+        if (maybeSuggestion.isPresent()) {
+            val sel = txtReconciliationCallsign.caretPositionProperty().get();
+            txtReconciliationCallsign.textProperty().set(maybeSuggestion.get());
+            txtReconciliationCallsign.positionCaret(sel);
+            txtReconciliationCallsign.selectEnd();
+        }
+
+        // Build table for callsign, excluding lots that are already reconciled
+        tblcolReconciliationLotNumber.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("lotNumber"));
+        tblcolReconciliationItemDescription.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("itemDescription"));
+        tblcolReconciliationBoughtAt.setCellValueFactory(item -> new ReadOnlyObjectWrapper<>(item.getValue().getBuyerCallsign().equals(currentlyTyped) ? item.getValue().getHammerPrice() : null));
+        tblcolReconciliationSoldFor.setCellValueFactory(item -> new ReadOnlyObjectWrapper<>(item.getValue().getSellerCallsign().equals(currentlyTyped) ? item.getValue().getHammerPrice() : null));
+        tblcolReconciliationLineTotal.setCellValueFactory(item -> {
+            val i = item.getValue();
+            val price = i.getHammerPrice();
+            var lineTotal = new BigDecimal("0");
+            if (i.getBuyerCallsign().equals(currentlyTyped)) {
+                lineTotal = lineTotal.subtract(price);
+            }
+            if (i.getSellerCallsign().equals(currentlyTyped)) {
+                lineTotal = lineTotal.add(price.multiply(CLUB_SALES_FACTOR).setScale(2, RoundingMode.HALF_EVEN));
+            }
+            return new ReadOnlyObjectWrapper<>(lineTotal);
+        });
+
+        log.debug("Updating reconciliation table");
+        val items = this.datafile.getItems()
+            .values()
+            .stream()
+            .filter(i ->
+                (currentlyTyped.equals(i.getBuyerCallsign()) && !i.isReconciledBuyer())
+                    || (i.getSellerCallsign().equals(currentlyTyped) & !i.isReconciledSeller()))
+            .toList();
+        tableReconciliation.setItems(FXCollections.observableList(items));
+        tableReconciliation.refresh();
+
+        // Calculate and update figures
+        var callsignTotal = new BigDecimal(0);
+        for (var i : items) {
+            if (currentlyTyped.equals(i.getBuyerCallsign())) {
+                callsignTotal = callsignTotal.subtract(i.getHammerPrice());
+            }
+            if (i.getSellerCallsign().equals(currentlyTyped)) {
+                callsignTotal = callsignTotal.add(i.getHammerPrice().multiply(CLUB_SALES_FACTOR).setScale(2, RoundingMode.HALF_EVEN));
+            }
+        }
+        val cmp = callsignTotal.compareTo(BigDecimal.ZERO);
+        log.debug("Calculated callsign total: {}", callsignTotal);
+        if (cmp == 0) {
+            // Nothing to pay
+            lblStatus.textProperty().set(messageBundle.getString("outcome-nothing"));
+        } else if (cmp > 0) {
+            // Club pays callsign
+            lblStatus.textProperty().set(messageBundle.getString("outcome-owed").formatted(callsignTotal.abs()));
+        } else {
+            // Callsign pays club
+            lblStatus.textProperty().set(messageBundle.getString("outcome-owes").formatted(callsignTotal.abs()));
+        }
+    }
+
+    /**
+     * Save details of the payment made to this callsign, and the associated lot
+     * numbers it reconciles.
+     */
+    public void reconcile() {
+        log.trace("reconcile");
+        val currentlyTyped = txtReconciliationCallsign.textProperty().get();
+        val items = this.datafile.getItems()
+            .values()
+            .stream()
+            .filter(i ->
+                (currentlyTyped.equals(i.getBuyerCallsign()) && !i.isReconciledBuyer())
+                    || (i.getSellerCallsign().equals(currentlyTyped) & !i.isReconciledSeller()))
+            .toList();
+        for (var i : items) {
+            if (currentlyTyped.equals(i.getBuyerCallsign())) {
+                i.setReconciledBuyer(true);
+                this.datafile.getAuditLog().add(new AuditEntry("Buyer %s has been reconciled against lot number %s.".formatted(currentlyTyped, i.getLotNumber())));
+                this.datafile.getItems().replace(i.getLotNumber(), i);
+            }
+            if (i.getSellerCallsign().equals(currentlyTyped)) {
+                i.setReconciledSeller(true);
+                this.datafile.getAuditLog().add(new AuditEntry("Seller %s has been reconciled against lot number %s.".formatted(currentlyTyped, i.getLotNumber())));
+                this.datafile.getItems().replace(i.getLotNumber(), i);
+            }
+        }
+        this.needsSaving = true;
+        txtReconciliationCallsign.textProperty().set("");
+        reconciliationCallsignChanged();
     }
 }
