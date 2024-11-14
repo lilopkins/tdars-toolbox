@@ -3,12 +3,29 @@
  */
 package uk.org.tdars.toolbox;
 
-public class App {
-    public String getGreeting() {
-        return "Hello World!";
+import java.util.ResourceBundle;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import lombok.val;
+
+public class App extends Application {
+    private final ResourceBundle messageBundle = ResourceBundle.getBundle("uk.org.tdars.toolbox.messages");
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        Parent root = FXMLLoader.load(getClass().getResource("scene.fxml"));
+        val scene = new Scene(root);
+
+        primaryStage.setTitle(messageBundle.getString("windowTitle"));
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        launch(args);
     }
 }
