@@ -8,17 +8,24 @@ import java.util.ResourceBundle;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -53,7 +60,10 @@ public class SurplusSaleController {
         stage.show();
     }
 
+    @FXML private Pane paneRoot;
+    @FXML private BorderPane borderPane;
     @FXML private Label lblStatus;
+    @FXML private TabPane tabPane;
     @FXML private Tab tabAuction;
     @FXML private Tab tabReconciliation;
     @FXML private Tab tabSalesOverview;
@@ -71,6 +81,14 @@ public class SurplusSaleController {
     @FXML private TextField txtAuctionReservePrice;
     @FXML private TextField txtAuctionBuyer;
     @FXML private TextField txtAuctionHammerPrice;
+
+    // Saves overview
+    @FXML private TableView<SurplusSaleItem> tableSalesOverview;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesLotNumber;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesItemDescription;
+    @FXML private TableColumn<SurplusSaleItem, BigDecimal> tblcolSalesSoldFor;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesSeller;
+    @FXML private TableColumn<SurplusSaleItem, String> tblcolSalesBuyer;
 
     /**
      * The file path for the currently opened file.
@@ -92,6 +110,9 @@ public class SurplusSaleController {
         stage.addEventHandler(WindowEvent.WINDOW_HIDING, event -> {
             closeFile();
         });
+
+        borderPane.prefWidthProperty().bind(paneRoot.widthProperty());
+        borderPane.prefHeightProperty().bind(paneRoot.heightProperty());
 
         txtAuctionSeller.focusedProperty().addListener(observable -> {
             auctionSellerChanged();
@@ -307,8 +328,16 @@ public class SurplusSaleController {
      * seller is typed in.
      */
     public void auctionSellerChanged() {
-        val currentlyTyped = txtAuctionSeller.textProperty().get();
-        if (currentlyTyped.isBlank()) return;
+        val currentlyTypedOrig = txtAuctionSeller.textProperty().get();
+        if (currentlyTypedOrig.isBlank()) return;
+
+        // Update text to uppercase callsign
+        val split = currentlyTypedOrig.split(" ", -1);
+        split[0] = split[0].toUpperCase();
+        val currentlyTyped = String.join(" ", split);
+        val caretPos = txtAuctionSeller.caretPositionProperty().get();
+        txtAuctionSeller.textProperty().set(currentlyTyped);
+        txtAuctionSeller.positionCaret(caretPos);
 
         // Update lot number
         val callsign = currentlyTyped.split(" ")[0];
@@ -316,7 +345,7 @@ public class SurplusSaleController {
             .getItems()
             .keySet()
             .stream()
-            .filter(lotNum -> lotNum.startsWith(callsign))
+            .filter(lotNum -> lotNum.startsWith("%s ".formatted(callsign)))
             .count() + 1;
         txtAuctionLotNumber.textProperty().set("%s-%d".formatted(callsign, nextNum));
 
@@ -334,8 +363,16 @@ public class SurplusSaleController {
      * Make suggestions for autocompletion.
      */
     public void auctionBuyerChanged() {
-        val currentlyTyped = txtAuctionBuyer.textProperty().get();
-        if (currentlyTyped.isBlank()) return;
+        val currentlyTypedOrig = txtAuctionBuyer.textProperty().get();
+        if (currentlyTypedOrig.isBlank()) return;
+
+        // Update text to uppercase callsign
+        val split = currentlyTypedOrig.split(" ", -1);
+        split[0] = split[0].toUpperCase();
+        val currentlyTyped = String.join(" ", split);
+        val caretPos = txtAuctionBuyer.caretPositionProperty().get();
+        txtAuctionBuyer.textProperty().set(currentlyTyped);
+        txtAuctionBuyer.positionCaret(caretPos);
 
         // find a suggestion
         val maybeSuggestion = this.datafile.getCallsigns().stream().filter(cs -> cs.startsWith(currentlyTyped)).findFirst();
@@ -417,5 +454,22 @@ public class SurplusSaleController {
         txtAuctionReservePrice.textProperty().set("");
         txtAuctionBuyer.textProperty().set("");
         txtAuctionHammerPrice.textProperty().set("");
+    }
+
+    /**
+     * Establish if any UI updates are needed as a result of a tab change
+     */
+    public void tabChanged() {
+        val selectedTab = tabPane.selectionModelProperty().get().getSelectedItem();
+        if (selectedTab.equals(tabSalesOverview)) {
+            // Update sales table
+            tblcolSalesLotNumber.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("lotNumber"));
+            tblcolSalesItemDescription.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("itemDescription"));
+            tblcolSalesSoldFor.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, BigDecimal>("hammerPrice"));
+            tblcolSalesSeller.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("sellerCallsign"));
+            tblcolSalesBuyer.setCellValueFactory(new PropertyValueFactory<SurplusSaleItem, String>("buyerCallsign"));
+
+            tableSalesOverview.setItems(FXCollections.observableList(this.datafile.getItems().values().stream().toList()));
+        }
     }
 }

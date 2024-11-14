@@ -24,11 +24,11 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.org.tdars.toolbox.surplus.SurplusSaleController">
+<Pane fx:id="paneRoot" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.org.tdars.toolbox.surplus.SurplusSaleController">
    <children>
-      <BorderPane prefHeight="600.0" prefWidth="800.0">
+      <BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0">
          <center>
-            <TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <TabPane fx:id="tabPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
               <tabs>
                   <Tab text="%overview">
                     <content>
@@ -160,10 +160,18 @@
                         </GridPane>
                      </content>
                   </Tab>
-                  <Tab fx:id="tabSalesOverview" disable="true" text="%salesOverview">
-                    <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                    </content>
+                  <Tab fx:id="tabSalesOverview" disable="true" onSelectionChanged="#tabChanged" text="%salesOverview">
+                     <content>
+                        <TableView fx:id="tableSalesOverview" prefHeight="200.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn fx:id="tblcolSalesLotNumber" editable="false" prefWidth="100.0" text="%lotNumber" />
+                            <TableColumn fx:id="tblcolSalesItemDescription" editable="false" prefWidth="250.0" text="%itemDesc" />
+                              <TableColumn fx:id="tblcolSalesSeller" editable="false" prefWidth="150.0" text="%seller" />
+                              <TableColumn fx:id="tblcolSalesSoldFor" editable="false" prefWidth="100.0" text="%soldAt" />
+                              <TableColumn fx:id="tblcolSalesBuyer" editable="false" prefWidth="150.0" text="%buyer" />
+                          </columns>
+                        </TableView>
+                     </content>
                   </Tab>
                   <Tab fx:id="tabPaymentOverview" disable="true" text="%paymentOverview">
                     <content>

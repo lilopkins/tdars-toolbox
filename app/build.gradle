@@ -27,6 +27,8 @@ dependencies {
     implementation 'ch.qos.reload4j:reload4j:1.2.25'
     // CLI Parser
     implementation 'net.sf.jopt-simple:jopt-simple:6.0-alpha-3'
+    // ESC/POS Receipt Printing
+    implementation 'com.github.anastaciocintra:escpos-coffee:4.1.0'
 }
 
 application {
