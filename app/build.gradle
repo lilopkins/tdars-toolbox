@@ -21,6 +21,12 @@ repositories {
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+    implementation 'org.slf4j:slf4j-reload4j:2.0.16'
+    implementation 'ch.qos.reload4j:reload4j:1.2.25'
+    // CLI Parser
+    implementation 'net.sf.jopt-simple:jopt-simple:6.0-alpha-3'
 }
 
 application {
@@ -31,6 +37,12 @@ application {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 javafx {

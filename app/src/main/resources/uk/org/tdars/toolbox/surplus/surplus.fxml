@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.input.KeyCodeCombination?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.org.tdars.toolbox.surplus.SurplusSaleController">
+   <children>
+      <BorderPane prefHeight="600.0" prefWidth="800.0">
+         <center>
+            <TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+              <tabs>
+                  <Tab text="%overview">
+                    <content>
+                        <VBox>
+                           <children>
+                              <GridPane hgap="8.0" vgap="8.0">
+                                 <columnConstraints>
+                                    <ColumnConstraints hgrow="NEVER" minWidth="10.0" />
+                                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                                 </rowConstraints>
+                                 <children>
+                                    <Label text="%auctionDate" />
+                                    <DatePicker fx:id="auctionDatePicker" disable="true" editable="false" GridPane.columnIndex="1" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
+                                 </padding>
+                              </GridPane>
+                           </children>
+                        </VBox>
+                    </content>
+                  </Tab>
+                <Tab fx:id="tabAuction" disable="true" text="%underTheHammer">
+                     <content>
+                        <VBox prefHeight="200.0" prefWidth="100.0" spacing="8.0">
+                           <children>
+                              <GridPane hgap="8.0" vgap="4.0">
+                                <columnConstraints>
+                                  <ColumnConstraints hgrow="NEVER" minWidth="10.0" />
+                                    <ColumnConstraints hgrow="NEVER" />
+                                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                </columnConstraints>
+                                <rowConstraints>
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                </rowConstraints>
+                                 <children>
+                                    <Label text="%lotNumber" />
+                                    <Label text="%itemDesc" GridPane.rowIndex="2" />
+                                    <Label text="%reserve" GridPane.rowIndex="3" />
+                                    <Label text="%seller" GridPane.rowIndex="1" />
+                                    <TextField fx:id="txtAuctionLotNumber" disable="true" editable="false" promptText="%lotNumberHint" GridPane.columnIndex="2" />
+                                    <TextField fx:id="txtAuctionSeller" maxWidth="200.0" onKeyTyped="#auctionSellerChanged" prefWidth="200.0" promptText="%callsignNameHint" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                    <TextField fx:id="txtAuctionItemDescription" promptText="%itemDescHint" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                    <TextField fx:id="txtAuctionReservePrice" maxWidth="100.0" prefWidth="100.0" promptText="%priceHint" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                                    <Label text="%currency" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                 </children>
+                              </GridPane>
+                              <Separator prefWidth="200.0" />
+                              <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="48.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#auctionItemNotSold" text="%itemNotSold" />
+                                    <Label text="%or" />
+                                    <GridPane hgap="8.0" vgap="4.0" HBox.hgrow="SOMETIMES">
+                                       <columnConstraints>
+                                          <ColumnConstraints hgrow="NEVER" minWidth="10.0" />
+                                          <ColumnConstraints hgrow="NEVER" maxWidth="16.0" minWidth="16.0" prefWidth="16.0" />
+                                          <ColumnConstraints hgrow="NEVER" />
+                                          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                       </columnConstraints>
+                                       <rowConstraints>
+                                          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                       </rowConstraints>
+                                       <children>
+                                          <Label text="%hammerPrice" GridPane.rowIndex="1" />
+                                          <Label text="%buyer" />
+                                          <TextField fx:id="txtAuctionBuyer" maxWidth="200.0" onKeyTyped="#auctionBuyerChanged" prefWidth="200.0" promptText="%callsignNameHint" GridPane.columnIndex="3" />
+                                          <TextField fx:id="txtAuctionHammerPrice" maxWidth="100.0" prefWidth="100.0" promptText="%priceHint" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                                          <Label text="%currency" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                          <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#auctionItemSold" text="%itemSold" GridPane.columnSpan="2147483647" GridPane.rowIndex="2" />
+                                       </children>
+                                    </GridPane>
+                                 </children>
+                              </HBox>
+                           </children>
+                           <padding>
+                              <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
+                           </padding>
+                        </VBox>
+                     </content>
+                </Tab>
+                  <Tab fx:id="tabReconciliation" disable="true" text="%reconciliation">
+                     <content>
+                        <GridPane hgap="8.0" vgap="8.0">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" />
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <TextField promptText="%callsignNameHint" GridPane.columnIndex="1" />
+                              <Label text="%callsign" />
+                              <TableView prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
+                                <columns>
+                                  <TableColumn minWidth="100.0" prefWidth="100.0" text="%lotNumber" />
+                                    <TableColumn minWidth="100.0" prefWidth="300.0" text="%itemDesc" />
+                                  <TableColumn minWidth="75.0" prefWidth="100.0" text="%boughtAt" />
+                                    <TableColumn minWidth="75.0" prefWidth="100.0" text="%soldAt" />
+                                    <TableColumn prefWidth="100.0" text="%lineTotal" />
+                                </columns>
+                              </TableView>
+                              <HBox prefHeight="100.0" prefWidth="200.0" spacing="8.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
+                                 <children>
+                                    <Button mnemonicParsing="false" text="%reconcile" />
+                                    <Button mnemonicParsing="false" text="%provideReceipt" />
+                                 </children>
+                              </HBox>
+                              <Label fx:id="lblStatus" text="Person not found" GridPane.columnSpan="2147483647" GridPane.rowIndex="1">
+                                 <font>
+                                    <Font name="System Bold" size="13.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <padding>
+                              <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
+                           </padding>
+                        </GridPane>
+                     </content>
+                  </Tab>
+                  <Tab fx:id="tabSalesOverview" disable="true" text="%salesOverview">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                    </content>
+                  </Tab>
+                  <Tab fx:id="tabPaymentOverview" disable="true" text="%paymentOverview">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                    </content>
+                  </Tab>
+              </tabs>
+            </TabPane>
+         </center>
+         <top>
+            <MenuBar BorderPane.alignment="CENTER">
+              <menus>
+                <Menu mnemonicParsing="false" text="%menu.file">
+                  <items>
+                    <MenuItem mnemonicParsing="false" onAction="#newFile" text="%menu.file.new">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                        <MenuItem mnemonicParsing="false" onAction="#openFile" text="%menu.file.open">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                        <MenuItem fx:id="menuSaveItem" disable="true" mnemonicParsing="false" onAction="#saveFile" text="%menu.file.save">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                  </items>
+                </Menu>
+              </menus>
+            </MenuBar>
+         </top>
+         <bottom>
+            <Pane BorderPane.alignment="CENTER">
+               <children>
+                  <Label fx:id="lblSaved" opacity="0.0" text="%saved">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+               </children>
+               <BorderPane.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </BorderPane.margin>
+            </Pane>
+         </bottom>
+      </BorderPane>
+   </children>
+</Pane>
