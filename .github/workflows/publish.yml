@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'  # Triggers only when a tag starting with 'v' is pushed (e.g., v1.0, v2.0.1, etc.)
 
+env:
+  PACKAGE_NAME: tdars-toolkit
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -39,14 +42,14 @@ jobs:
       - name: Build with jlinkZip
         run: ./gradlew jlinkZip
 
-      - name: Build with jpackage
-        run: ./gradlew jpackage
-
-      - name: Rename zip
+      - name: Rename jlink zip
         if: success()
         shell: bash
         run: |
-          mv app/build/*.zip app/build/${{ github.repository }}-${{ runner.os }}.zip
+          mv app/build/image.zip app/build/${{ env.PACKAGE_NAME }}-${{ runner.os }}.zip
+
+      - name: Build with jpackage
+        run: ./gradlew jpackage
 
       - name: List built packages
         if: failure()
@@ -60,4 +63,4 @@ jobs:
         with:
           files: |
             app/build/jpackage/*.*
-            app/build/${{ github.repository }}-${{ runner.os }}.zip
+            app/build/${{ env.PACKAGE_NAME }}-${{ runner.os }}.zip
