@@ -14,7 +14,7 @@ plugins {
     id 'io.freefair.lombok' version '8.10.2'
 }
 
-version '0.1.0'
+version '1.0.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
