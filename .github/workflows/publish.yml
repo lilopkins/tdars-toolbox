@@ -11,6 +11,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -37,14 +39,25 @@ jobs:
       - name: Build with jlinkZip
         run: ./gradlew jlinkZip
 
+      - name: Build with jpackage
+        run: ./gradlew jpackage
+
       - name: Rename zip
         if: success()
         shell: bash
         run: |
-          mv app/build/image.zip app/build/${{ github.repository }}-${{ runner.os }}.zip
+          mv app/build/*.zip app/build/${{ github.repository }}-${{ runner.os }}.zip
 
-      - name: Release binary
+      - name: List built packages
+        if: failure()
+        shell: bash
+        run: |
+          tree -a app/build
+
+      - name: Release portable and installers
         if: success()
         uses: softprops/action-gh-release@v1
         with:
-          files: app/build/image.zip
+          files: |
+            app/build/jpackage/*.*
+            app/build/${{ github.repository }}-${{ runner.os }}.zip
