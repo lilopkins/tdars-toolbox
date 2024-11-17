@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: jlink-zip-${{ matrix.os }}
-          path: build/distributions/*.zip
+          path: app/build/image.zip
 
   release:
     runs-on: ubuntu-latest
