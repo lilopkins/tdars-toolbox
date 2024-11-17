@@ -52,7 +52,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          tree -a app/build
+          ls -aR app/build
 
       - name: Release portable and installers
         if: success()
