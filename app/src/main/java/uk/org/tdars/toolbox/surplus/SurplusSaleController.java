@@ -72,6 +72,7 @@ public class SurplusSaleController {
     @FXML private Tab tabReconciliation;
     @FXML private Tab tabSalesOverview;
     @FXML private MenuItem menuSaveItem;
+    @FXML private MenuItem menuCloseItem;
     @FXML private Label lblSaved;
 
     // Overview tab
@@ -146,11 +147,20 @@ public class SurplusSaleController {
      */
     private void fileStateEnable(boolean fileOpened) {
         log.debug("fileStateEnabled = {}", fileOpened);
+
+        // Enable and disable as required
         tabAuction.setDisable(!fileOpened);
         tabReconciliation.setDisable(!fileOpened);
         tabSalesOverview.setDisable(!fileOpened);
         auctionDatePicker.setDisable(!fileOpened);
         menuSaveItem.setDisable(!fileOpened);
+        menuCloseItem.setDisable(!fileOpened);
+
+        // Focus Overview tab
+        tabPane.getSelectionModel().select(tabOverview);
+
+        // Clear audit log for visuals only
+        tableAuditLog.setItems(null);
     }
 
     /**
