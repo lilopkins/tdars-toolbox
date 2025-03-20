@@ -8,6 +8,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
@@ -207,6 +208,12 @@
                               <KeyCodeCombination alt="UP" code="W" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <Menu fx:id="menuExport" disable="true" mnemonicParsing="false" text="%menu.file.export">
+                          <items>
+                            <MenuItem mnemonicParsing="false" onAction="#exportLedger" text="%menu.file.export.ledger" />
+                          </items>
+                        </Menu>
                   </items>
                 </Menu>
               </menus>

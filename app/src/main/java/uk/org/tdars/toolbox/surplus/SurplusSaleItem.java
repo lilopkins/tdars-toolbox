@@ -14,6 +14,10 @@ public class SurplusSaleItem implements Serializable {
     private String sellerCallsign;
     private String itemDescription;
     private BigDecimal reservePrice;
+    /**
+     * Check if `hammerPrice` is null instead.
+     */
+    @Deprecated
     private boolean itemSold;
     private String buyerCallsign;
     private BigDecimal hammerPrice;
