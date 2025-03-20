@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
 import java.time.OffsetDateTime;
 import java.util.ResourceBundle;
+
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -24,6 +27,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -34,6 +38,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -72,6 +77,8 @@ public class SurplusSaleController {
     @FXML private Tab tabReconciliation;
     @FXML private Tab tabSalesOverview;
     @FXML private MenuItem menuSaveItem;
+    @FXML private MenuItem menuCloseItem;
+    @FXML private Menu menuExport;
     @FXML private Label lblSaved;
 
     // Overview tab
@@ -146,11 +153,21 @@ public class SurplusSaleController {
      */
     private void fileStateEnable(boolean fileOpened) {
         log.debug("fileStateEnabled = {}", fileOpened);
+
+        // Enable and disable as required
         tabAuction.setDisable(!fileOpened);
         tabReconciliation.setDisable(!fileOpened);
         tabSalesOverview.setDisable(!fileOpened);
         auctionDatePicker.setDisable(!fileOpened);
         menuSaveItem.setDisable(!fileOpened);
+        menuCloseItem.setDisable(!fileOpened);
+        menuExport.setDisable(!fileOpened);
+
+        // Focus Overview tab
+        tabPane.getSelectionModel().select(tabOverview);
+
+        // Clear audit log for visuals only
+        tableAuditLog.setItems(null);
     }
 
     /**
@@ -634,5 +651,200 @@ public class SurplusSaleController {
         this.needsSaving = true;
         txtReconciliationCallsign.textProperty().set("");
         reconciliationCallsignChanged();
+    }
+
+    /**
+     * Export all transactions to an ledger spreadsheet.
+     */
+    public void exportLedger() {
+        log.trace("exportLedger");
+
+        val fileChooser = new FileChooser();
+        fileChooser.setTitle(messageBundle.getString("exported.choose-path"));
+
+        // Optionally, set a default file name and file extension filters
+        fileChooser.setInitialFileName("%s.xlsx".formatted(messageBundle.getString("exported.file-name")));
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter(messageBundle.getString("file-filter.excel"), "*.xlsx"),
+            new FileChooser.ExtensionFilter(messageBundle.getString("file-filter.all"), "*.*")
+        );
+
+        // Show the dialog and get the chosen file
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            // Export
+            try {
+                @Cleanup val workbook = new XSSFWorkbook();
+                val creationHelper = workbook.getCreationHelper();
+
+                val styleTitle = workbook.createCellStyle();
+                val fontTitle = workbook.createFont();
+                fontTitle.setFontHeightInPoints((short) 28);
+                fontTitle.setBold(true);
+                styleTitle.setFont(fontTitle);
+
+                val styleItalic = workbook.createCellStyle();
+                val fontSubtitle = workbook.createFont();
+                fontSubtitle.setItalic(true);
+                styleItalic.setFont(fontSubtitle);
+
+                val styleBold = workbook.createCellStyle();
+                val fontBold = workbook.createFont();
+                fontBold.setBold(true);
+                styleBold.setFont(fontBold);
+
+                {
+                    val shtTransactions = workbook.createSheet(messageBundle.getString("exported.sheet-name.transactions"));
+                    shtTransactions.setDisplayGridlines(false);
+                    shtTransactions.setPrintGridlines(false);
+                    shtTransactions.createFreezePane(0, 5);
+                    shtTransactions.setColumnWidth(0, 3 * 256);
+                    shtTransactions.setColumnWidth(1, 13 * 256);
+                    shtTransactions.setColumnWidth(2, 35 * 256);
+                    shtTransactions.setColumnWidth(3, 25 * 256);
+                    shtTransactions.setColumnWidth(4, 10 * 256);
+                    shtTransactions.setColumnWidth(5, 10 * 256);
+                    shtTransactions.setColumnWidth(6, 10 * 256);
+
+                    val cellTitle = shtTransactions.createRow(1).createCell(1);
+                    cellTitle.setCellStyle(styleTitle);
+                    cellTitle.setCellValue(messageBundle.getString("exported.transactions.title"));
+
+                    val cellSubtitle = shtTransactions.createRow(2).createCell(1);
+                    cellSubtitle.setCellStyle(styleItalic);
+                    cellSubtitle.setCellValue(messageBundle.getString("exported.transactions.subtitle").formatted(datafile.getAuctionDate()));
+
+                    val rowHeadings = shtTransactions.createRow(4);
+                    val cellHdg1 = rowHeadings.createCell(1);
+                    cellHdg1.setCellStyle(styleBold);
+                    cellHdg1.setCellValue(messageBundle.getString("exported.transactions.headings.ref"));
+                    val cellHdg2 = rowHeadings.createCell(2);
+                    cellHdg2.setCellStyle(styleBold);
+                    cellHdg2.setCellValue(messageBundle.getString("exported.transactions.headings.desc"));
+                    val cellHdg3 = rowHeadings.createCell(3);
+                    cellHdg3.setCellStyle(styleBold);
+                    cellHdg3.setCellValue(messageBundle.getString("exported.transactions.headings.party"));
+                    val cellHdg4 = rowHeadings.createCell(4);
+                    cellHdg4.setCellStyle(styleBold);
+                    cellHdg4.setCellValue(messageBundle.getString("exported.transactions.headings.debit"));
+                    val cellHdg5 = rowHeadings.createCell(5);
+                    cellHdg5.setCellStyle(styleBold);
+                    cellHdg5.setCellValue(messageBundle.getString("exported.transactions.headings.credit"));
+                    val cellHdg6 = rowHeadings.createCell(6);
+                    cellHdg6.setCellStyle(styleBold);
+                    cellHdg6.setCellValue(messageBundle.getString("exported.transactions.headings.balance"));
+
+                    val items = datafile.getItems().values().stream().toList();
+                    val accountingFormat = creationHelper.createDataFormat().getFormat("[$£-809]#,##0.00;[RED]-[$£-809]#,##0.00");
+                    val styleCurrency = workbook.createCellStyle();
+                    styleCurrency.setDataFormat(accountingFormat);
+
+                    // Add opening balance
+                    val rowOpening = shtTransactions.createRow(5);
+                    val cellOpeningDesc = rowOpening.createCell(2);
+                    cellOpeningDesc.setCellStyle(styleItalic);
+                    cellOpeningDesc.setCellValue(messageBundle.getString("exported.transactions.opening"));
+                    val cellOpeningBalance = rowOpening.createCell(6);
+                    cellOpeningBalance.setCellStyle(styleCurrency);
+                    cellOpeningBalance.setCellValue(0);
+
+                    var row = 6;
+                    for (var i = 0; i < items.size(); i++) {
+                        val item = items.get(i);
+
+                        if (item.getHammerPrice() == null) {
+                            log.trace("Skipping item, unsold.");
+                            continue;
+                        }
+
+                        // First we enter the purchaser row
+                        if (item.isReconciledBuyer()) {
+                            log.trace("Buyer reconciled, adding row");
+                            val rowPurchaser = shtTransactions.createRow(row++);
+                            rowPurchaser.createCell(1).setCellValue(item.getLotNumber());
+                            rowPurchaser.createCell(2).setCellValue(item.getItemDescription());
+                            rowPurchaser.createCell(3).setCellValue(item.getBuyerCallsign());
+                            val c1 = rowPurchaser.createCell(5);
+                            c1.setCellStyle(styleCurrency);
+                            c1.setCellValue(item.getHammerPrice().doubleValue());
+                            val c2 = rowPurchaser.createCell(6);
+                            c2.setCellStyle(styleCurrency);
+                            c2.setCellFormula("G%d-E%d+F%d".formatted(row - 1, row, row));
+                        }
+
+                        // Then the seller payout
+                        if (item.isReconciledSeller()) {
+                            log.trace("Seller reconciled, adding row");
+                            val rowSeller = shtTransactions.createRow(row++);
+                            rowSeller.createCell(1).setCellValue(item.getLotNumber());
+                            rowSeller.createCell(2).setCellValue(item.getItemDescription());
+                            rowSeller.createCell(3).setCellValue(item.getSellerCallsign());
+                            val sellerPayout = item.getHammerPrice().multiply(new BigDecimal("0.9"));
+                            val c1 = rowSeller.createCell(4);
+                            c1.setCellStyle(styleCurrency);
+                            c1.setCellValue(sellerPayout.doubleValue());
+                            val c2 = rowSeller.createCell(6);
+                            c2.setCellStyle(styleCurrency);
+                            c2.setCellFormula("G%d-E%d+F%d".formatted(row - 1, row, row));
+                        }
+                    }
+
+                    // Add closing balance
+                    val rowClosing = shtTransactions.createRow(row);
+                    val cellClosingDesc = rowClosing.createCell(2);
+                    cellClosingDesc.setCellStyle(styleItalic);
+                    cellClosingDesc.setCellValue(messageBundle.getString("exported.transactions.closing"));
+                    val cellClosingBalance = rowClosing.createCell(6);
+                    cellClosingBalance.setCellStyle(styleCurrency);
+                    cellClosingBalance.setCellFormula("G%d".formatted(row));
+                }
+
+                {
+                    val shtAudit = workbook.createSheet(messageBundle.getString("exported.sheet-name.audit"));
+                    shtAudit.setDisplayGridlines(false);
+                    shtAudit.setPrintGridlines(false);
+                    shtAudit.createFreezePane(0, 5);
+                    shtAudit.setColumnWidth(0, 3 * 256);
+                    shtAudit.setColumnWidth(1, 25 * 256);
+                    shtAudit.setColumnWidth(2, 150 * 256);
+
+                    val cellTitle = shtAudit.createRow(1).createCell(1);
+                    cellTitle.setCellStyle(styleTitle);
+                    cellTitle.setCellValue(messageBundle.getString("exported.audit.title"));
+
+                    val cellSubtitle = shtAudit.createRow(2).createCell(1);
+                    cellSubtitle.setCellStyle(styleItalic);
+                    cellSubtitle.setCellValue(messageBundle.getString("exported.audit.subtitle").formatted(datafile.getAuctionDate()));
+
+                    val rowHeadings = shtAudit.createRow(4);
+                    val cellHdgTimestamp = rowHeadings.createCell(1);
+                    cellHdgTimestamp.setCellStyle(styleBold);
+                    cellHdgTimestamp.setCellValue(messageBundle.getString("exported.audit.headings.timestamp"));
+                    val cellHdgEvent = rowHeadings.createCell(2);
+                    cellHdgEvent.setCellStyle(styleBold);
+                    cellHdgEvent.setCellValue(messageBundle.getString("exported.audit.headings.event"));
+
+                    val auditEvents = datafile.getAuditLog();
+                    val dateFormat = creationHelper.createDataFormat().getFormat("YYYY-MM-DD HH:MM:SS.000");
+                    val styleDate = workbook.createCellStyle();
+                    styleDate.setDataFormat(dateFormat);
+                    for (var i = 0; i < auditEvents.size(); i++) {
+                        val auditEvent = auditEvents.get(i);
+                        val row = shtAudit.createRow(5 + i);
+
+                        val cellDate = row.createCell(1);
+                        cellDate.setCellValue(auditEvent.getMoment().toLocalDateTime());
+                        cellDate.setCellStyle(styleDate);
+                        row.createCell(2).setCellValue(auditEvent.getEntry());
+                    }
+                }
+
+                @Cleanup val os = Files.newOutputStream(file.toPath());
+                workbook.write(os);
+            } catch (IOException e) {
+                log.error("An error occurred while exporting.", e);
+                showErrorAlert("dialog.failed-export.title", "dialog.failed-export.header", "dialog.failed-export.content");
+            }
+        }
     }
 }

@@ -9,12 +9,13 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'org.gradlex.extra-java-module-info' version '1.11'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.beryx.jlink' version '3.0.1'
     id 'io.freefair.lombok' version '8.10.2'
 }
 
-version '1.0.0'
+version '1.1.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -30,6 +31,15 @@ dependencies {
     implementation 'ch.qos.reload4j:reload4j:1.2.25'
     // CLI Parser
     implementation 'net.sf.jopt-simple:jopt-simple:6.0-alpha-3'
+    // Excel export functionality
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation 'org.apache.poi:poi:5.4.0'
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+}
+
+extraJavaModuleInfo {
+    automaticModule('org.slf4j:slf4j-reload4j', 'slf4j.reload4j')
+    automaticModule('org.apache.commons:commons-math3', 'commons.math3')
 }
 
 application {

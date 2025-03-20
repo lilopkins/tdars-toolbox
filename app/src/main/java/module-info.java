@@ -22,4 +22,7 @@ module uk.org.tdars.toolbox {
 
     // JOptSimple
     requires joptsimple;
+
+    // Apache POI
+    requires org.apache.poi.ooxml;
 }
